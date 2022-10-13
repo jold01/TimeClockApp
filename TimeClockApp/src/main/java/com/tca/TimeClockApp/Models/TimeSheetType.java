@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class TimeSheetType {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private String time_sheet_id;
 
     private String type_name;

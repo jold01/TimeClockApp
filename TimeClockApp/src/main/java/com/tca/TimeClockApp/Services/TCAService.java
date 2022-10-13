@@ -27,6 +27,21 @@ public class TCAService {
         return employeeRepository.findAll();
     }
 
+    public Iterable<TimeSheetType> getAllTimeShiftTypes(){ return timeSheetTypeRepository.findAll();}
+
+    public boolean checkEmployeeId(String empId){
+       return employeeRepository.existsById(empId);
+    }
+
+    public Response createNewEmployee(Employee newEmp){
+        if(!checkEmployeeId(newEmp.getEmp_custom_id())){
+            employeeRepository.save(newEmp);
+            return new Response(1);
+        }else{
+            return new Response(2);
+        }
+    }
+
 
 
 

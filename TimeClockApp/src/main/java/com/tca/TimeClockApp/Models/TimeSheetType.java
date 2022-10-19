@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class TimeSheetType {
+    //This class maps to the time_sheet_type table in DB
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

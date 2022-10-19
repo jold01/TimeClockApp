@@ -1,22 +1,29 @@
 package com.tca.TimeClockApp.Models;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
+
 
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @IdClass(TimeSheetKeys.class)
 public class TimeSheet {
+
+    //This class maps to time_sheet table in DB
+    //This uses TimeSheetKeys to handle the composite keys
 
     @Id
     private String emp_custom_id;
 
     @Id
-    private String time_sheet_id;
+    private int time_sheet_id;
 
-    private LocalDateTime time_submitted;
+    @Id
+    private Timestamp time_submitted;
 }

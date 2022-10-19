@@ -13,6 +13,7 @@ import javax.persistence.Id;
 @Data
 @NoArgsConstructor
 public class Employee {
+    //This maps to the employee table in DB
 
     @Id
     @NotNull

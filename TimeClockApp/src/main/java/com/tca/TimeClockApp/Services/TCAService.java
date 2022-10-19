@@ -1,5 +1,4 @@
 package com.tca.TimeClockApp.Services;
-import com.tca.TimeClockApp.Controllers.TCAController;
 import com.tca.TimeClockApp.Models.*;
 import com.tca.TimeClockApp.Repositories.EmployeeRepository;
 import com.tca.TimeClockApp.Repositories.TimeSheetRepository;
@@ -9,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
 import java.time.*;
 
 import java.util.List;
@@ -27,7 +25,7 @@ public class TCAService {
     @Autowired
     private TimeSheetTypeRepository timeSheetTypeRepository;
 
-    private final int SECONDS_FOR_HOURS = 3600;
+    private final double SECONDS_FOR_HOURS = 3600.00;
 
 
 
@@ -42,10 +40,13 @@ public class TCAService {
     }
 
     public Response createNewEmployee(Employee newEmp){
+        //Checks if the employee Id submitted already exists in DB
         if(!checkEmployeeId(newEmp.getEmp_custom_id())){
+            //Save employee object to DB and give success response object
             employeeRepository.save(newEmp);
             return new Response(1);
         }else{
+            //Returns failed action response due to id already in DB
             return new Response(3);
         }
     }
@@ -58,80 +59,92 @@ public class TCAService {
             return new Response(2);
         }
         else{
-            //LocalDateTime ldt = LocalDateTime.now();
+
 
             //Generate current entry time
-
-            //OLD IMPLEMENTATION
-            Timestamp ts = Timestamp.from(Instant.now());
-            System.out.println("TS: "+ ts);
+            LocalDateTime ldt = LocalDateTime.now(ZoneOffset.UTC);
 
 
-            LocalDateTime ldt = LocalDateTime.now();
-            //System.out.println("LDT: "+ ldt);
-            ZonedDateTime zdt = ZonedDateTime.of(ldt, ZoneId.systemDefault());
-            Timestamp tsUTC = Timestamp.valueOf(zdt.withZoneSameInstant(ZoneId.of("GMT")).toLocalDateTime());
 
-            System.out.println("TSUTC: "+ tsUTC);
+            //Gets list of time sheet entries for submitted id to see if there are any submissions
+            //Already made
+            List<TimeSheet> lts = timeSheetRepository.sp_SelectEntriesById(emp_custom_id);
+            System.out.println("LIST SIZE: " + lts.size());
 
-            //Auto Gemerate time in SQL FIELD instead of sending time submission here
 
-            //Convert time from Local to UTC before submission
+            //Condition for first time submission to have to be "start shift"
+            if(lts.size() == 0){
 
-            //Get latest timesheet entry from DB by emp_ID and check time_sheet_type_id to
-            //Using MySQL stored procedure
 
-            //Write Condition for first time submission to have to be "start shift"
-
-            int latestTSType = timeSheetRepository.sp_SelectRecentTSEntryById(emp_custom_id).getTime_sheet_id();
-            //see if submitted id and stored id are the same. If they are, reject request
-            if(latestTSType == time_sheet_type_id){
-                return new Response(2);
-            }else{
-                //Enter Entry into DB
-                timeSheetRepository.save(new TimeSheet(emp_custom_id, time_sheet_type_id, tsUTC));
-                return new Response(1);
+                if(time_sheet_type_id == 1){
+                    //Enter Entry into DB
+                    timeSheetRepository.save(new TimeSheet(emp_custom_id, time_sheet_type_id, ldt));
+                    return new Response(1);
+                }
+                else{
+                    return new Response(2);
+                }
+            }else {
+                //Get latest timesheet entry from DB by emp_ID and check time_sheet_type_id to
+                //Using MySQL stored procedure
+                int latestTSType = timeSheetRepository.sp_SelectRecentTSEntryById(emp_custom_id).getTime_sheet_id();
+                //see if submitted id and stored id are the same. If they are, reject request
+                if (latestTSType == time_sheet_type_id) {
+                    return new Response(2);
+                } else {
+                    //Enter Entry into DB
+                    timeSheetRepository.save(new TimeSheet(emp_custom_id, time_sheet_type_id, ldt));
+                    return new Response(1);
+                }
             }
 
-
         }
 
     }
 
-    @Transactional
-    public TimeSheet getLatestTSById(String empId){
-        if(timeSheetRepository.sp_SelectRecentTSEntryById(empId) == null){
-            System.out.println("OBJECT IS NULL **************");
-        }
-        return timeSheetRepository.sp_SelectRecentTSEntryById(empId);
-    }
+//    @Transactional
+//    public TimeSheet getLatestTSById(String empId){
+//        if(timeSheetRepository.sp_SelectRecentTSEntryById(empId) == null){
+//            System.out.println("OBJECT IS NULL **************");
+//        }
+//        return timeSheetRepository.sp_SelectRecentTSEntryById(empId);
+//    }
 
     @Transactional
     public TSResponse getEntriesById(String empId){
+        //This method is used to retrieve all time sheet entries submitted by a specified employee Id
+        //It calculates the total number of hours from those time sheet entries
+        //It returns a TSResponse object
 
+        //Calls SQL stored procedure to get all time sheet entry objects and put them in a list
         List<TimeSheet> entries = timeSheetRepository.sp_SelectEntriesById(empId);
 
-
+        //The variable that stores each date duration comparison in seconds
         int timeInSeconds = 0;
 
+
         for(int i=0; i<entries.size(); i++){
-            LocalDateTime cdate = entries.get(i).getTime_submitted().toLocalDateTime();
+            //Takes the LDT of the current index, and compares with the next
+            //index if the current index id is 1 (Shift start) and that the next index exists
+            LocalDateTime cdate = entries.get(i).getTime_submitted();
             System.out.println(entries.get(i));
             if(i+1 < entries.size() && entries.get(i).getTime_sheet_id() == 1){
-                LocalDateTime ndate = entries.get(i+1).getTime_submitted().toLocalDateTime();
+                LocalDateTime ndate = entries.get(i+1).getTime_submitted();
 
+                //Method that gets the duration between the two dates
                 Duration duration = Duration.between(cdate, ndate);
 
+                //Appends the duration time to the total time in seconds variable
                 timeInSeconds += duration.getSeconds();
 
             }
 
         }
-
+        //Converts the seconds into hours
         double timeInHours = timeInSeconds/SECONDS_FOR_HOURS;
-        System.out.println(timeInHours + " HOURS");
 
-        return new TSResponse(entries, timeInHours);
+        //Returns the list of entries and a formatted floating point of calculated hours
+        return new TSResponse(entries, String.format("%.3f", timeInHours ));
     }
 
 

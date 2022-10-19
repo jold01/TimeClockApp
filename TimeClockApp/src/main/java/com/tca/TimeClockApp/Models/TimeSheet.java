@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 
 @Entity
@@ -25,5 +26,5 @@ public class TimeSheet {
     private int time_sheet_id;
 
     @Id
-    private Timestamp time_submitted;
+    private LocalDateTime time_submitted;
 }

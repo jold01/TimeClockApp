@@ -10,9 +10,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TSResponse {
+//This class is used to as a response object to give the client a list of timesheet entries and the total hours calculated for those hours
 
     private List<TimeSheet> timeSheetResults;
 
-    private double totalHours;
+    private String totalHours;
 
 }

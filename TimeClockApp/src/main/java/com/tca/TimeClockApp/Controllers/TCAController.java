@@ -39,10 +39,10 @@ public class TCAController {
 
     }
 
-    @GetMapping(path="/getLatestTimeSheetById")
-    public @ResponseBody TimeSheet getLatestTSById(@RequestParam String emp_custom_id){
-        return tcaService.getLatestTSById(emp_custom_id);
-    }
+//    @GetMapping(path="/getLatestTimeSheetById")
+//    public @ResponseBody TimeSheet getLatestTSById(@RequestParam String emp_custom_id){
+//        return tcaService.getLatestTSById(emp_custom_id);
+//    }
 
     @GetMapping(path="/getEntriesById")
     public @ResponseBody TSResponse getEntriesById(@RequestParam String emp_custom_id){

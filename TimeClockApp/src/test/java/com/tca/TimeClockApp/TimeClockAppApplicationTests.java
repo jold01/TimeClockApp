@@ -15,7 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -37,7 +38,7 @@ class TimeClockAppApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
+	//Test to confirm that creating a new employee can be successfully added to the DB
 	@Test
 	void testNewUniqueEmployee(){
 		Employee testEmp = new Employee();
@@ -47,7 +48,7 @@ class TimeClockAppApplicationTests {
 
 		assertEquals(new Response(1), tcaService.createNewEmployee(testEmp));
 	}
-
+	//Test to confirm creating a new employee with the same employee id gets rejected
 	@Test
 	void testRejectSameEmployeeInsertion(){
 		Employee testEmp = new Employee();
@@ -58,28 +59,30 @@ class TimeClockAppApplicationTests {
 		assertEquals(new Response(3), tcaService.createNewEmployee(testEmp));
 	}
 
+	//Confirming that the calculation for total hours worked is correct
 	@Test
 	void testTotalShiftCalculation(){
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		//Create TimeSheet Objects
 		TimeSheet ts1 = new TimeSheet();
 		ts1.setEmp_custom_id("testEmp1");
 		ts1.setTime_sheet_id(1);
-		ts1.setTime_submitted(Timestamp.valueOf("2022-01-01 06:00:00"));
+		ts1.setTime_submitted(LocalDateTime.parse("2022-01-01 06:00:00", formatter));
 
 		TimeSheet ts2 = new TimeSheet();
 		ts2.setEmp_custom_id("testEmp1");
 		ts2.setTime_sheet_id(2);
-		ts2.setTime_submitted(Timestamp.valueOf("2022-01-02 06:00:00"));
+		ts2.setTime_submitted(LocalDateTime.parse("2022-01-02 06:00:00", formatter));
 
 		TimeSheet ts3 = new TimeSheet();
 		ts3.setEmp_custom_id("testEmp1");
 		ts3.setTime_sheet_id(1);
-		ts3.setTime_submitted(Timestamp.valueOf("2022-01-05 10:00:00"));
+		ts3.setTime_submitted(LocalDateTime.parse("2022-01-05 10:00:00", formatter));
 
 		TimeSheet ts4 = new TimeSheet();
 		ts4.setEmp_custom_id("testEmp1");
 		ts4.setTime_sheet_id(2);
-		ts4.setTime_submitted(Timestamp.valueOf("2022-01-06 10:00:00"));
+		ts4.setTime_submitted(LocalDateTime.parse("2022-01-06 10:00:00", formatter));
 
 		//Submit timeSheet objects to DB
 		tsRepo.save(ts1);
@@ -91,9 +94,10 @@ class TimeClockAppApplicationTests {
 		TSResponse tsResponse = tcaService.getEntriesById("testEmp1");
 
 		//Assert that the time is correct
-		assertEquals(48.0, tsResponse.getTotalHours());
+		assertEquals("48.000", tsResponse.getTotalHours());
 	}
 
+	//Test to confirm ending a shift without starting one gets rejected
 	@Test
 	void testEndingShiftWithoutStarting(){
 		//Create test Timesheet Object
@@ -101,13 +105,17 @@ class TimeClockAppApplicationTests {
 
 	}
 
+	//Test to confirm that starting a shift while before the previous shift was closed gets rejected
 	@Test
 	void testStartingShiftWithoutEnding(){
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
 		//Create new timesheet object
 		TimeSheet ts1 = new TimeSheet();
 		ts1.setEmp_custom_id("testEmp1");
 		ts1.setTime_sheet_id(1);
-		ts1.setTime_submitted(Timestamp.valueOf("2022-01-07 06:00:00"));
+		ts1.setTime_submitted(LocalDateTime.parse("2022-01-07 06:00:00", formatter));
 
 		//Save timesheet object to DB
 		tsRepo.save(ts1);
@@ -115,6 +123,7 @@ class TimeClockAppApplicationTests {
 		assertEquals(new Response(2), tcaService.insertTimeSheetEntry("testEmp1", 1));
 	}
 
+	//This is used to clean up all the test entries added to the DB
 	@AfterAll
 	@Transactional
 	void cleanUpDB(){
